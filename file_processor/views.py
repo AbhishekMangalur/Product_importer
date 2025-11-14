@@ -49,6 +49,11 @@ def upload_file(request):
         if not uploaded_file.name.endswith('.csv'):
             return Response({'error': 'Only CSV files are allowed'}, status=status.HTTP_400_BAD_REQUEST)
         
+        # Validate file size (optional limit)
+        max_file_size = 100 * 1024 * 1024  # 100MB limit
+        if uploaded_file.size > max_file_size:
+            return Response({'error': 'File size exceeds 100MB limit'}, status=status.HTTP_400_BAD_REQUEST)
+        
         # Save file to media directory
         file_name = default_storage.save(
             f"uploads/{uploaded_file.name}", 

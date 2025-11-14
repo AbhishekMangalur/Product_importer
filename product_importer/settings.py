@@ -152,6 +152,11 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'UTC'
 
+# Optimize Celery for memory-constrained environments
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+CELERY_TASK_ACKS_LATE = True
+CELERYD_MAX_TASKS_PER_CHILD = 10
+
 # For development, if Redis is not available, use synchronous execution
 import os
 if os.environ.get('DJANGO_ENV') == 'development':
@@ -171,6 +176,11 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [],
     'DEFAULT_PERMISSION_CLASSES': [],
 }
+
+# File upload settings
+# Limit file upload size to prevent memory issues
+DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB
 
 # SSL/TLS configuration for PostgreSQL
 if 'DATABASE_URL' in os.environ:
