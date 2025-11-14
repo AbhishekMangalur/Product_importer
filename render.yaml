@@ -1,0 +1,45 @@
+services:
+  - type: web
+    name: product-importer
+    env: python
+    buildCommand: "pip install -r requirements-render.txt && python manage.py collectstatic --noinput"
+    startCommand: "gunicorn product_importer.wsgi:application"
+    envVars:
+      - key: DATABASE_URL
+        # Replace with your Nhost PostgreSQL connection string
+        value: "postgresql://postgres:Bengaluru@2025@blpanddocyuukzlnshdx.db.ap-south-1.nhost.run:5432/blpanddocyuukzlnshdx"
+      - key: REDIS_URL
+        fromService:
+          name: product-importer-redis
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+
+  - type: worker
+    name: product-importer-worker
+    env: python
+    buildCommand: "pip install -r requirements-render.txt"
+    startCommand: "celery -A product_importer worker --loglevel=info"
+    envVars:
+      - key: DATABASE_URL
+        # Replace with your Nhost PostgreSQL connection string
+        value: "postgresql://postgres:Bengaluru@2025@blpanddocyuukzlnshdx.db.ap-south-1.nhost.run:5432/blpanddocyuukzlnshdx"
+      - key: REDIS_URL
+        fromService:
+          name: product-importer-redis
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+
+  - type: redis
+    name: product-importer-redis
+    ipAllowList: []
+# Removed databases section since we're using Nhost PostgreSQL
+# databases:
+#   - name: product-importer-db
+#     databaseName: product_importer
+#     user: product_importer_user

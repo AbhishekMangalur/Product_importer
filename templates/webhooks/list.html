@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}Webhooks{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Webhooks</h1>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addWebhookModal">
+        Add Webhook
+    </button>
+</div>
+
+<!-- Webhooks Table -->
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>URL</th>
+                        <th>Event Type</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="webhooksTableBody">
+                    <!-- Webhooks will be loaded here via AJAX -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Webhook Modal -->
+<div class="modal fade" id="addWebhookModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Webhook</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addWebhookForm">
+                    <div class="mb-3">
+                        <label for="url" class="form-label">Webhook URL</label>
+                        <input type="url" class="form-control" id="url" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="event_type" class="form-label">Event Type</label>
+                        <select class="form-control" id="event_type" required>
+                            <option value="product_created">Product Created</option>
+                            <option value="product_updated">Product Updated</option>
+                            <option value="product_deleted">Product Deleted</option>
+                            <option value="bulk_import_started">Bulk Import Started</option>
+                            <option value="bulk_import_completed">Bulk Import Completed</option>
+                            <option value="bulk_import_failed">Bulk Import Failed</option>
+                        </select>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="is_active" checked>
+                        <label class="form-check-label" for="is_active">Active</label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveWebhookBtn">Save Webhook</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Test Webhook Modal -->
+<div class="modal fade" id="testWebhookModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Test Webhook</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="testResult">
+                    <!-- Test results will be shown here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% load static %}
+<script src="{% static 'js/webhooks.js' %}"></script>
+{% endblock %}

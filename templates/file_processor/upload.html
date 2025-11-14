@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}File Upload{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h1 class="text-center mb-4">Upload Products CSV</h1>
+        
+        <!-- Upload Form -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="csvFile" class="form-label">Select CSV File</label>
+                        <input class="form-control" type="file" id="csvFile" accept=".csv" required>
+                        <div class="form-text">
+                            Upload a CSV file with columns: sku, name, description, price<br>
+                            <strong>Note:</strong> Larger datasets take longer to upload and process.
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="uploadBtn">Upload File</button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Progress Section -->
+        <div class="card" id="progressSection" style="display: none;">
+            <div class="card-body">
+                <h5 class="card-title">Upload Progress</h5>
+                <div class="progress mb-3">
+                    <div class="progress-bar" role="progressbar" id="progressBar" style="width: 0%;">0%</div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4">
+                        <p><strong>Status:</strong> <span id="statusText">Pending</span></p>
+                    </div>
+                    <div class="col-md-4">
+                        <p><strong>Processed:</strong> <span id="processedRows">0</span> / <span id="totalRows">0</span> rows</p>
+                    </div>
+                    <div class="col-md-4">
+                        <p><strong>Duration:</strong> <span id="uploadDuration" style="display: none;">0 seconds</span></p>
+                    </div>
+                </div>
+                <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% load static %}
+<script src="{% static 'js/file-upload.js' %}"></script>
+{% endblock %}
