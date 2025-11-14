@@ -1,288 +1,185 @@
-# Product Importer Application
+# Product Importer
 
-A Django web application for importing large CSV files (up to 500,000 products) into a PostgreSQL database with real-time progress tracking, webhook integration, and product management capabilities.
+A Django web application for importing large CSV files (up to 500,000 products) into PostgreSQL with real-time progress tracking and webhook integration.
+
+## Deployed Application
+
+Your application is deployed and accessible at:
+**http://194.238.19.109/**
+
+### Security Note
+
+> **Note**: If your browser shows an "unsecure" warning when accessing the site, please proceed by clicking "Advanced" and then "Proceed to 194.238.19.109 (unsafe)" or the equivalent option in your browser. This happens because the site is served over HTTP instead of HTTPS. For a permanent solution, you can set up an SSL certificate using Let's Encrypt.
+
+For production use, I recommend configuring SSL with:
+```bash
+# Install Certbot
+apt install certbot python3-certbot-nginx
+
+# Obtain SSL certificate
+certbot --nginx -d 194.238.19.109
+```
 
 ## Features
 
-1. **File Upload via UI**
-   - Upload large CSV files (up to 500,000 products)
-   - Real-time progress indicator during upload
-   - Automatic duplicate handling based on SKU (case-insensitive)
-   - Optimized for large file processing
+- **File Upload**: Upload large CSV files directly through the web interface
+- **Real-time Progress**: Track upload progress with visual indicators
+- **Product Management**: View, create, update, and delete products
+- **Bulk Operations**: Delete all products with confirmation
+- **Webhook Configuration**: Manage and test webhooks via UI
+- **Asynchronous Processing**: Handles large files without blocking the UI
 
-2. **Upload Progress Visibility**
-   - Real-time progress updates in the UI
-   - Visual progress bar and percentage indicators
-   - Status messages ("Parsing CSV", "Validating", "Import Complete")
-   - Error handling with retry options
+## System Architecture
 
-3. **Product Management UI**
-   - View, create, update, and delete products
-   - Filtering by SKU, name, active status, or description
-   - Paginated product listings
-   - Inline editing and modal forms
-
-4. **Bulk Delete**
-   - Delete all products with confirmation dialog
-   - Success/failure notifications
-   - Visual feedback during processing
-
-5. **Webhook Configuration**
-   - Add, edit, test, and delete webhooks
-   - Configure webhook URLs and event types
-   - Enable/disable webhooks
-   - Test triggers with response feedback
-
-## Technology Stack
-
-- **Web Framework**: Django (Python)
+- **Web Framework**: Django 5.2
 - **Database**: PostgreSQL (Nhost)
-- **Asynchronous Processing**: Celery with Redis
-- **Frontend**: HTML/CSS/JavaScript with Bootstrap
-- **Deployment**: Render
+- **Background Processing**: Celery with Redis
+- **Frontend**: HTML, CSS, JavaScript with Bootstrap
+- **Deployment**: Hostinger VPS with Nginx and Gunicorn
 
-## Quick Start with Docker Compose
-
-The easiest way to run the application is with Docker Compose, which will automatically set up all required services:
-
-1. Make sure you have Docker and Docker Compose installed
-2. Run the application:
-   ```bash
-   # On Linux/Mac:
-   ./start.sh
-   
-   # On Windows:
-   start.bat
-   ```
-   
-   Or manually:
-   ```bash
-   docker-compose up -d
-   ```
-
-3. Access the application at http://localhost:8000
-
-This will start all required services:
-- PostgreSQL database on port 5432
-- Redis server on port 6379
-- Django web server on port 8000
-- Celery worker for background processing
-
-## Application Components
-
-### 1. File Upload System
-- **Location**: `/upload/`
-- **Features**:
-  - CSV file upload with validation
-  - Real-time progress tracking (0-100%)
-  - Fake progress simulation during upload phase (0-70%)
-  - Real progress during processing phase (70-100%)
-  - Upload duration tracking in seconds
-  - Case-insensitive SKU handling with automatic overwrite
-  - Asynchronous processing with Celery
-  - Error handling and retry mechanisms
-
-### 2. Product Management
-- **Location**: `/products/`
-- **Features**:
-  - View all products with pagination
-  - Filter by SKU, name, description, and active status
-  - Create new products via modal form
-  - Edit existing products
-  - Delete individual products with confirmation
-  - Bulk delete all products with confirmation
-  - Real-time search with debounced input
-
-### 3. Webhook Management
-- **Location**: `/webhooks/`
-- **Features**:
-  - View all configured webhooks
-  - Add new webhooks with URL and event type
-  - Edit existing webhooks
-  - Enable/disable webhooks
-  - Delete webhooks with confirmation
-  - Test webhooks with detailed response feedback
-  - Response code and timing information
-
-### 4. API Endpoints
-
-#### Products API
-- `GET /api/products/` - List all products (paginated)
-- `POST /api/products/` - Create a new product
-- `GET /api/products/{id}/` - Get a specific product
-- `PUT /api/products/{id}/` - Update a specific product
-- `DELETE /api/products/{id}/` - Delete a specific product
-- `POST /api/products/bulk-delete/` - Delete all products
-
-#### Webhooks API
-- `GET /api/webhooks/` - List all webhooks (paginated)
-- `POST /api/webhooks/` - Create a new webhook
-- `GET /api/webhooks/{id}/` - Get a specific webhook
-- `PUT /api/webhooks/{id}/` - Update a specific webhook
-- `DELETE /api/webhooks/{id}/` - Delete a specific webhook
-- `POST /api/webhooks/{id}/test/` - Test a specific webhook
-
-#### File Processor API
-- `POST /api/file-processor/upload/` - Upload a CSV file
-- `GET /api/file-processor/status/{id}/` - Get upload status
-
-## Deployment Instructions
-
-### Prerequisites
-
-1. Create a Render account: https://render.com
-2. Create an Nhost account and PostgreSQL database: https://nhost.io
-
-### Deploying to Render
-
-1. Fork this repository to your GitHub account
-2. Log in to Render Dashboard
-3. Click "New+" and select "Web Service"
-4. Connect your GitHub account and select your forked repository
-5. Configure the service:
-   - Name: `product-importer`
-   - Environment: Python 3
-   - Build Command: `pip install -r requirements.txt && python manage.py collectstatic --noinput`
-   - Start Command: `gunicorn product_importer.wsgi:application`
-6. Add environment variables:
-   - `DATABASE_URL`: Your Nhost PostgreSQL connection string
-   - `REDIS_URL`: Render will automatically populate this
-   - `SECRET_KEY`: Generate a secure secret key
-   - `DEBUG`: Set to `False` for production
-7. Click "Create Web Service"
-
-### Setting up Redis
-
-1. In the Render Dashboard, click "New+" and select "Redis"
-2. Name it `product-importer-redis`
-3. Select the free tier
-
-### Setting up Celery Worker
-
-1. In the Render Dashboard, click "New+" and select "Background Worker"
-2. Connect to the same repository
-3. Configure the service:
-   - Name: `product-importer-worker`
-   - Environment: Python 3
-   - Build Command: `pip install -r requirements.txt`
-   - Start Command: `celery -A product_importer worker --loglevel=info`
-4. Add the same environment variables as the web service
-
-### Configuring Nhost PostgreSQL
-
-1. Log in to your Nhost dashboard
-2. Create a new project or use an existing one
-3. Get your PostgreSQL connection string from the database settings
-4. Update the `DATABASE_URL` environment variable in Render with this connection string
-
-### Running Migrations
-
-After deployment, you'll need to run database migrations:
-
-1. Go to your web service in Render
-2. Click on "Manual Deploy" → "Run Migration"
-3. Or use the Render Shell to run:
-   ```
-   python manage.py migrate
-   ```
-
-## Local Development
-
-### Prerequisites
+## Prerequisites
 
 - Python 3.8+
-- PostgreSQL
-- Redis
+- PostgreSQL database (Nhost recommended)
+- Redis server
+- Hostinger VPS or similar hosting environment
 
-### Setup with All Services
-
-The recommended approach is to use Docker Compose as described in the Quick Start section above.
-
-### Manual Setup
-
-If you prefer to run services manually:
+## Installation
 
 1. Clone the repository:
-   ```
-   git clone <repository-url>
-   cd product-importer
+   ```bash
+   git clone https://github.com/AbhishekMangalur/Product_importer.git
+   cd Product_importer
    ```
 
 2. Create a virtual environment:
-   ```
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate
    ```
 
 3. Install dependencies:
-   ```
+   ```bash
    pip install -r requirements.txt
    ```
 
-4. Set up environment variables in `.env`:
-   ```
-   DATABASE_URL=postgresql://user:password@localhost:5432/product_importer
-   REDIS_URL=redis://localhost:6379
-   SECRET_KEY=your-secret-key
-   DEBUG=True
+4. Create `.env` file with your configuration:
+   ```env
+   DEBUG=False
+   SECRET_KEY=your_secret_key_here
+   DATABASE_URL=postgresql://user:password@host:port/database
+   REDIS_URL=redis://localhost:6379/0
+   ALLOWED_HOSTS=your_domain_or_ip
    ```
 
 5. Run migrations:
-   ```
+   ```bash
    python manage.py migrate
    ```
 
-6. Create a superuser:
-   ```
-   python manage.py createsuperuser
-   ```
-
-7. Start the development server:
-   ```
-   python manage.py runserver
+6. Collect static files:
+   ```bash
+   python manage.py collectstatic
    ```
 
-8. In another terminal, start the Celery worker:
+## Deployment on Hostinger VPS
+
+1. Connect to your VPS:
+   ```bash
+   ssh root@194.238.19.109
    ```
-   celery -A product_importer worker --loglevel=info
+
+2. Install required packages:
+   ```bash
+   apt update && apt install -y python3 python3-pip python3-venv nginx redis-server git
    ```
 
-## Graceful Fallback
+3. Clone and set up the application:
+   ```bash
+   cd /var/www
+   git clone https://github.com/AbhishekMangalur/Product_importer.git
+   cd Product_importer
+   python3 -m venv venv
+   source venv/bin/activate
+   pip install -r requirements.txt
+   ```
 
-The application is designed to work smoothly even when Redis is not available:
+4. Configure systemd services for Django and Celery:
+   ```bash
+   # Create Django service
+   nano /etc/systemd/system/product-importer.service
+   
+   # Create Celery worker service
+   nano /etc/systemd/system/product-importer-worker.service
+   ```
 
-- **With Redis**: Uses Celery for asynchronous background processing
-- **Without Redis**: Automatically falls back to synchronous processing
-- **Development Mode**: Uses synchronous execution by default for easier debugging
+5. Configure Nginx:
+   ```bash
+   nano /etc/nginx/sites-available/product-importer
+   ln -s /etc/nginx/sites-available/product-importer /etc/nginx/sites-enabled/
+   systemctl restart nginx
+   ```
 
-## Architecture
+6. Start services:
+   ```bash
+   systemctl daemon-reload
+   systemctl start product-importer
+   systemctl start product-importer-worker
+   systemctl enable product-importer
+   systemctl enable product-importer-worker
+   ```
 
-The application uses a distributed architecture to handle large file imports efficiently:
+## SSL Configuration
 
-1. **Web Interface**: Django serves the frontend and handles user interactions
-2. **File Upload**: Files are uploaded asynchronously to avoid timeouts
-3. **Task Queue**: Celery processes file imports in the background
-4. **Database**: PostgreSQL stores products and application data
-5. **Real-time Updates**: WebSocket-like functionality through periodic AJAX polling
-6. **Webhooks**: Configurable webhooks for external integrations
+To secure your application with HTTPS:
 
-## Handling Long Operations
+```bash
+# Install Certbot
+apt install certbot python3-certbot-nginx
 
-To handle the 30-second timeout limitation on platforms like Render:
+# Obtain SSL certificate
+certbot --nginx -d 194.238.19.109
+```
 
-1. File uploads are processed asynchronously using Celery
-2. Progress is tracked in the database and updated in real-time
-3. Users can close the browser and return later to check progress
-4. Webhooks are triggered upon completion/failure
-5. Large operations are chunked into smaller tasks when possible
+## Usage
 
-## Contributing
+1. **Upload Products**: Navigate to the Upload section to import CSV files
+2. **Manage Products**: View and edit products in the Products section
+3. **Configure Webhooks**: Set up webhooks in the Webhooks section
+4. **Monitor Progress**: Track import progress in real-time
 
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a pull request
+## CSV File Format
+
+The application expects CSV files with the following columns:
+- `sku`: Product SKU (unique identifier)
+- `name`: Product name
+- `description`: Product description
+- `price`: Product price
+
+Example:
+```csv
+sku,name,description,price
+SKU001,Product 1,Description for Product 1,29.99
+SKU002,Product 2,Description for Product 2,39.99
+```
+
+## Important Notes
+
+> **Note**: Larger datasets take longer to upload and process. For datasets with 500,000+ records, processing may take several minutes to up to 30 minutes. You can close this page and check back later - the import will continue in the background.
+
+## Troubleshooting
+
+- If you encounter "Failed to start processing" errors, ensure Redis is running:
+  ```bash
+  systemctl status redis
+  systemctl start redis
+  ```
+
+- Check application logs:
+  ```bash
+  journalctl -u product-importer -f
+  journalctl -u product-importer-worker -f
+  ```
 
 ## License
 
