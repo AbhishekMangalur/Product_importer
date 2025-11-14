@@ -1,7 +1,0 @@
-# Requirements for Render deployment
-# Inherits from requirements.txt but may include additional packages for production
-
--r requirements.txt
-
-# Additional packages for Render deployment
-psycopg2-binary==2.9.9

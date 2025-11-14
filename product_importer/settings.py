@@ -160,7 +160,7 @@ CELERY_TASK_SOFT_TIME_LIMIT = 3540  # 59 minutes
 CELERY_TASK_TIME_LIMIT = 3600  # 60 minutes
 
 # Always use eager mode in development/testing
-if os.environ.get('DJANGO_ENV') == 'development' or os.environ.get('DEBUG') == 'True':
+if os.environ.get('DJANGO_ENV') == 'development' or 'DEBUG' in os.environ and os.environ.get('DEBUG') == 'True':
     CELERY_TASK_ALWAYS_EAGER = True
     CELERY_TASK_EAGER_PROPAGATES = True
 else:

@@ -1,8 +1,8 @@
 from django.urls import path
-from . import views
+from .views import WebhookListView, WebhookDetailView, test_webhook
 
 urlpatterns = [
-    path('', views.WebhookListView.as_view(), name='webhook-list'),
-    path('<int:pk>/', views.WebhookDetailView.as_view(), name='webhook-detail'),
-    path('<int:pk>/test/', views.test_webhook, name='webhook-test'),
+    path('', WebhookListView.as_view(), name='webhook-list-create'),
+    path('<int:pk>/', WebhookDetailView.as_view(), name='webhook-detail'),
+    path('<int:pk>/test/', test_webhook, name='webhook-test'),
 ]
