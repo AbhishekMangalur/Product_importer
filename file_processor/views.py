@@ -39,36 +39,51 @@ def upload_file(request):
     """
     Upload a CSV file for processing
     """
-    if 'file' not in request.FILES:
-        return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
-    
-    uploaded_file = request.FILES['file']
-    
-    # Save file to media directory
-    file_name = default_storage.save(
-        f"uploads/{uploaded_file.name}", 
-        ContentFile(uploaded_file.read())
-    )
-    
-    # Create file upload record
-    file_upload = FileUpload.objects.create(  # pyright: ignore[reportAttributeAccessIssue]
-        file_name=uploaded_file.name,
-        file_size=uploaded_file.size,
-        status='pending'
-    )
-    
-    # Check if Redis is available for Celery
-    redis_available = is_redis_available()
-    
-    if redis_available:
-        # Use async processing with Celery
-        try:
-            from .tasks import process_csv_file
-            process_csv_file.delay(file_upload.id, file_name)  # pyright: ignore[reportFunctionMemberAccess]
-            print("Processing asynchronously with Celery")
-        except Exception as e:
-            print(f"Failed to start async task, falling back to sync: {e}")
-            # Fallback to synchronous processing
+    try:
+        if 'file' not in request.FILES:
+            return Response({'error': 'No file provided'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        uploaded_file = request.FILES['file']
+        
+        # Validate file type
+        if not uploaded_file.name.endswith('.csv'):
+            return Response({'error': 'Only CSV files are allowed'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Save file to media directory
+        file_name = default_storage.save(
+            f"uploads/{uploaded_file.name}", 
+            ContentFile(uploaded_file.read())
+        )
+        
+        # Create file upload record
+        file_upload = FileUpload.objects.create(  # pyright: ignore[reportAttributeAccessIssue]
+            file_name=uploaded_file.name,
+            file_size=uploaded_file.size,
+            status='pending'
+        )
+        
+        # Check if Redis is available for Celery
+        redis_available = is_redis_available()
+        
+        if redis_available:
+            # Use async processing with Celery
+            try:
+                from .tasks import process_csv_file
+                process_csv_file.delay(file_upload.id, file_name)  # pyright: ignore[reportFunctionMemberAccess]
+                print("Processing asynchronously with Celery")
+            except Exception as e:
+                print(f"Failed to start async task, falling back to sync: {e}")
+                # Fallback to synchronous processing
+                from .tasks import process_csv_file
+                try:
+                    process_csv_file(file_upload.id, file_name)
+                except Exception as sync_error:
+                    file_upload.status = 'failed'
+                    file_upload.error_message = f'Sync processing failed: {str(sync_error)}'
+                    file_upload.save()
+        else:
+            # Use synchronous processing when Redis is not available
+            print("Redis not available, processing synchronously")
             from .tasks import process_csv_file
             try:
                 process_csv_file(file_upload.id, file_name)
@@ -76,19 +91,21 @@ def upload_file(request):
                 file_upload.status = 'failed'
                 file_upload.error_message = f'Sync processing failed: {str(sync_error)}'
                 file_upload.save()
-    else:
-        # Use synchronous processing when Redis is not available
-        print("Redis not available, processing synchronously")
-        from .tasks import process_csv_file
-        try:
-            process_csv_file(file_upload.id, file_name)
-        except Exception as sync_error:
-            file_upload.status = 'failed'
-            file_upload.error_message = f'Sync processing failed: {str(sync_error)}'
-            file_upload.save()
-    
-    serializer = FileUploadSerializer(file_upload)
-    return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
+        serializer = FileUploadSerializer(file_upload)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
+    except Exception as e:
+        # Log the error for debugging
+        print(f"Upload error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        
+        # Return JSON error response
+        return Response(
+            {'error': f'Upload failed: {str(e)}'}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 @api_view(['GET'])
 def file_upload_status(request, upload_id):

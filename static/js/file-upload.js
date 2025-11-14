@@ -68,7 +68,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json())
+            .then(response => {
+                // Check if response is OK
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error(`HTTP ${response.status}: ${text}`);
+                    });
+                }
+                return response.json();
+            })
             .then(data => {
                 // Stop fake progress when real progress starts
                 stopFakeProgress();
@@ -86,7 +94,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Stop fake progress on error
                 stopFakeProgress();
                 stopTimer();
-                showError('Upload failed: ' + error.message);
+                
+                // Try to parse error as JSON, fallback to text
+                if (error.message.includes('HTTP')) {
+                    showError(error.message);
+                } else {
+                    showError('Upload failed: ' + error.message);
+                }
             });
         });
     }
@@ -136,7 +150,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function pollFileStatus(uploadId) {
         fetch(`/api/file-processor/status/${uploadId}/`)
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
         .then(data => {
             // Update progress with smooth animation
             updateProgress(
@@ -247,8 +266,12 @@ document.addEventListener('DOMContentLoaded', function() {
         // Stop timer
         stopTimer();
         
+        // Display error message
         errorMessage.textContent = message;
         errorMessage.style.display = 'block';
         statusText.textContent = 'Failed';
+        
+        // Log error to console for debugging
+        console.error('Upload error:', message);
     }
 });
