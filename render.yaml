@@ -8,7 +8,7 @@ services:
     name: product-importer
     env: python
     buildCommand: "pip install -r requirements-render.txt && python manage.py collectstatic --noinput"
-    startCommand: "gunicorn product_importer.wsgi:application --timeout 300 --workers 2 --max-requests 100 --max-requests-jitter 10 --preload"
+    startCommand: "gunicorn product_importer.wsgi:application --timeout 600 --workers 1 --max-requests 50 --max-requests-jitter 5 --preload --worker-class sync --worker-tmp-dir /dev/shm"
     envVars:
       - key: DATABASE_URL
         fromDatabase:
@@ -17,13 +17,13 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: WEB_CONCURRENCY
-        value: 2
+        value: 1
 
   - type: worker
     name: product-importer-worker
     env: python
     buildCommand: "pip install -r requirements-render.txt"
-    startCommand: "celery -A product_importer worker --loglevel=info --concurrency=1 --max-tasks-per-child=10"
+    startCommand: "celery -A product_importer worker --loglevel=info --concurrency=1 --max-tasks-per-child=5 --pool solo"
     envVars:
       - key: DATABASE_URL
         fromDatabase:

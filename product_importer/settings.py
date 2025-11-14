@@ -155,7 +155,9 @@ CELERY_TIMEZONE = 'UTC'
 # Optimize Celery for memory-constrained environments
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_TASK_ACKS_LATE = True
-CELERYD_MAX_TASKS_PER_CHILD = 10
+CELERYD_MAX_TASKS_PER_CHILD = 5
+CELERY_TASK_SOFT_TIME_LIMIT = 300  # 5 minutes
+CELERY_TASK_TIME_LIMIT = 360  # 6 minutes
 
 # For development, if Redis is not available, use synchronous execution
 import os
@@ -179,14 +181,18 @@ REST_FRAMEWORK = {
 
 # File upload settings
 # Limit file upload size to prevent memory issues
-DATA_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB
-FILE_UPLOAD_MAX_MEMORY_SIZE = 104857600  # 100MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50MB
+FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50MB
+
+# Reduce memory usage for database operations
+DATABASES['default']['OPTIONS'] = {
+    'MAX_CONNS': 20,
+    'MIN_CONNS': 5,
+}
 
 # SSL/TLS configuration for PostgreSQL
 if 'DATABASE_URL' in os.environ:
     import urllib.parse
     parsed_db_url = urllib.parse.urlparse(os.environ['DATABASE_URL'])
     if parsed_db_url.scheme == 'postgresql':
-        DATABASES['default']['OPTIONS'] = {
-            'sslmode': 'require',
-        }
+        DATABASES['default']['OPTIONS']['sslmode'] = 'require'
