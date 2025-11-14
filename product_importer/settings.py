@@ -184,15 +184,11 @@ REST_FRAMEWORK = {
 DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50MB
 
-# Reduce memory usage for database operations
-DATABASES['default']['OPTIONS'] = {
-    'MAX_CONNS': 20,
-    'MIN_CONNS': 5,
-}
-
 # SSL/TLS configuration for PostgreSQL
 if 'DATABASE_URL' in os.environ:
     import urllib.parse
     parsed_db_url = urllib.parse.urlparse(os.environ['DATABASE_URL'])
     if parsed_db_url.scheme == 'postgresql':
-        DATABASES['default']['OPTIONS']['sslmode'] = 'require'
+        DATABASES['default']['OPTIONS'] = {
+            'sslmode': 'require',
+        }
