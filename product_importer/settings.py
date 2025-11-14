@@ -156,8 +156,8 @@ CELERY_TIMEZONE = 'UTC'
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_TASK_ACKS_LATE = True
 CELERYD_MAX_TASKS_PER_CHILD = 5
-CELERY_TASK_SOFT_TIME_LIMIT = 300  # 5 minutes
-CELERY_TASK_TIME_LIMIT = 360  # 6 minutes
+CELERY_TASK_SOFT_TIME_LIMIT = 3540  # 59 minutes
+CELERY_TASK_TIME_LIMIT = 3600  # 60 minutes
 
 # For development, if Redis is not available, use synchronous execution
 import os
@@ -183,6 +183,9 @@ REST_FRAMEWORK = {
 # Limit file upload size to prevent memory issues
 DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50MB
 FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50MB
+
+# Database transaction settings
+DATABASES['default']['ATOMIC_REQUESTS'] = False  # Disable atomic requests to prevent transaction issues
 
 # SSL/TLS configuration for PostgreSQL
 if 'DATABASE_URL' in os.environ:
