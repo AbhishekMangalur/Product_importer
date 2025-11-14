@@ -1,11 +1,13 @@
 import os
 import csv
 import time
+from celery import shared_task
 from django.db import transaction, connection
 from django.conf import settings
 from products.models import Product
 from .models import FileUpload
 
+@shared_task
 def process_csv_file(upload_id, file_path):
     """
     Process a CSV file and import products
