@@ -4,7 +4,7 @@ A Django web application for importing large CSV files (up to 500,000 products) 
 
 ## Deployed Application
 
-Your application is deployed and accessible at:
+Application is deployed and accessible at:
 **http://194.238.19.109/**
 
 ### Security Note
@@ -17,7 +17,7 @@ For production use, I recommend configuring SSL with:
 apt install certbot python3-certbot-nginx
 
 # Obtain SSL certificate
-certbot --nginx -d 194.238.19.109
+certbot --nginx -d <Your VPS IP address>
 ```
 
 ## Features
@@ -86,7 +86,7 @@ certbot --nginx -d 194.238.19.109
 
 1. Connect to your VPS:
    ```bash
-   ssh root@194.238.19.109
+   ssh root@<Your VPS IP address>
    ```
 
 2. Install required packages:
@@ -138,7 +138,7 @@ To secure your application with HTTPS:
 apt install certbot python3-certbot-nginx
 
 # Obtain SSL certificate
-certbot --nginx -d 194.238.19.109
+certbot --nginx -d <Your VPS IP address>
 ```
 
 ## Usage
