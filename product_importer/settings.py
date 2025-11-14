@@ -128,7 +128,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
@@ -144,9 +144,9 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Celery Configuration - with fallback for development
+# Celery Configuration
 CELERY_BROKER_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
-CELERY_RESULT_BACKEND = 'django-db'
+CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
@@ -159,9 +159,8 @@ CELERYD_MAX_TASKS_PER_CHILD = 5
 CELERY_TASK_SOFT_TIME_LIMIT = 3540  # 59 minutes
 CELERY_TASK_TIME_LIMIT = 3600  # 60 minutes
 
-# For development, if Redis is not available, use synchronous execution
-import os
-if os.environ.get('DJANGO_ENV') == 'development':
+# Always use eager mode in development/testing
+if os.environ.get('DJANGO_ENV') == 'development' or os.environ.get('DEBUG') == 'True':
     CELERY_TASK_ALWAYS_EAGER = True
     CELERY_TASK_EAGER_PROPAGATES = True
 else:

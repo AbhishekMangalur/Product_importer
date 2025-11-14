@@ -1,2 +1,2 @@
-web: gunicorn product_importer.wsgi:application
-worker: celery -A product_importer worker --loglevel=info
+web: gunicorn product_importer.wsgi --bind 0.0.0.0:$PORT
+worker: celery -A product_importer worker --loglevel=INFO

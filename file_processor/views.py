@@ -1,6 +1,7 @@
 import os
 import csv
 import redis
+from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from rest_framework import status
@@ -11,6 +12,12 @@ from django.core.files.base import ContentFile
 from django.conf import settings
 from .models import FileUpload
 from .serializers import FileUploadSerializer
+
+def upload_page(request):
+    """
+    Render the file upload page
+    """
+    return render(request, 'file_processor/upload.html')
 
 def is_redis_available():
     """
@@ -38,6 +45,7 @@ def is_redis_available():
 def upload_file(request):
     """
     Upload a CSV file for processing
+    Always returns immediately, processing happens asynchronously
     """
     try:
         if 'file' not in request.FILES:
@@ -67,35 +75,22 @@ def upload_file(request):
             status='pending'
         )
         
-        # Check if Redis is available for Celery
-        redis_available = is_redis_available()
-        
-        if redis_available:
-            # Use async processing with Celery
-            try:
-                from .tasks import process_csv_file
-                process_csv_file.delay(file_upload.id, file_name)  # pyright: ignore[reportFunctionMemberAccess]
-                print("Processing asynchronously with Celery")
-            except Exception as e:
-                print(f"Failed to start async task, falling back to sync: {e}")
-                # Fallback to synchronous processing
-                from .tasks import process_csv_file
-                try:
-                    process_csv_file(file_upload.id, file_name)
-                except Exception as sync_error:
-                    file_upload.status = 'failed'
-                    file_upload.error_message = f'Sync processing failed: {str(sync_error)}'
-                    file_upload.save()
-        else:
-            # Use synchronous processing when Redis is not available
-            print("Redis not available, processing synchronously")
+        # Always use async processing with Celery, even if Redis check fails
+        # This prevents the web worker from being blocked during file processing
+        try:
             from .tasks import process_csv_file
-            try:
-                process_csv_file(file_upload.id, file_name)
-            except Exception as sync_error:
-                file_upload.status = 'failed'
-                file_upload.error_message = f'Sync processing failed: {str(sync_error)}'
-                file_upload.save()
+            process_csv_file.delay(file_upload.id, file_name)  # pyright: ignore[reportFunctionMemberAccess]
+            print("Processing asynchronously with Celery")
+        except Exception as e:
+            print(f"Failed to start async task: {e}")
+            # If Celery fails, mark the upload as failed immediately
+            file_upload.status = 'failed'
+            file_upload.error_message = f'Failed to start processing: {str(e)}'
+            file_upload.save()
+            return Response(
+                {'error': f'Failed to start processing: {str(e)}'}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
         
         serializer = FileUploadSerializer(file_upload)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
